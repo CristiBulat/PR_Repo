@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PR Lab 1 - HTTP Server</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: #111827;
+            background-image: linear-gradient(135deg, #111827 0%, #37306B 100%);
+            background-attachment: fixed;
+            color: #F9FAFB;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            font-size: 32px;
+            color: #FFFFFF;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 16px;
+            margin: 0 0 24px 0;
+        }
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #D1D5DB;
+        }
+        .image-container {
+            margin: 32px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        img {
+            max-width: 100%;
+            display: block;
+        }
+        .button-group {
+            margin-top: 32px;
+            display: flex;
+            gap: 16px;
+        }
+        a.button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #A5B4FC;
+            color: #111827;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        a.button:hover {
+            background: #C7D2FE;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(165, 180, 252, 0.2);
+        }
+        a.button-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #E5E7EB;
+        }
+        a.button-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Welcome to My Lab 1 HTTP Server</h1>
+        <p>
+            This page is being served by a custom Python server using raw TCP sockets.
+            This project fulfills the requirements for Lab 1 of the Network Programming course.
+        </p>
+        
+        <div class="image-container">
+            <img src="dog.png" alt="Sample Dog Image">
+        </div>
+        
+        <p>
+            The server supports serving HTML, PNG, and PDF files, as well as
+            generating dynamic directory listings (with a new visual style!).
+        </p>
+        
+        <div class="button-group">
+            <a href="/Books/" class="button">Browse Books 📚</a>
+            <a href="/nonexistent-page.html" class="button button-secondary">Test 404 Error</a>
+        </div>
+    </div>
+</body>
+</html>

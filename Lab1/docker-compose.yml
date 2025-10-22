@@ -1,0 +1,15 @@
+services:
+  http-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: http_server_lab1
+    ports:
+      # Map host port 8080 to container port 8080
+      - "8080:8080"
+    volumes:
+      # Mount the local collection folder as read-only
+      - ./collection:/app/collection:ro
+    # Command to run the server
+    command: python -u server.py /app/collection
+    restart: unless-stopped
