@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PR Lab 2 - Concurrent Server Test Page</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: #111827;
+            background-image: linear-gradient(135deg, #111827 0%, #37306B 100%);
+            background-attachment: fixed;
+            color: #F9FAFB;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            font-size: 32px;
+            color: #FFFFFF;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 16px;
+            margin: 0 0 24px 0;
+        }
+        h2 {
+            font-size: 24px;
+            color: #E5E7EB;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
+            margin: 40px 0 24px 0;
+        }
+        p, li {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #D1D5DB;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        .image-container {
+            margin: 32px 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .image-container img {
+            max-width: 100%;
+            display: block;
+            height: auto;
+        }
+        .button-group {
+            margin-top: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        a.button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #A5B4FC;
+            color: #111827;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        a.button:hover {
+            background: #C7D2FE;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(165, 180, 252, 0.2);
+        }
+        pre {
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #F9FAFB;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 14px;
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            font-size: 14px;
+            color: #9CA3AF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Lab 2: Concurrent Server Test Dashboard</h1>
+        
+        <h2>Project Overview</h2>
+        <p>
+            This page is served by the custom <strong>concurrent</strong> HTTP 1.1 server built for Lab 2.
+            This server now uses a thread pool to handle multiple requests, features a hit counter, and implements rate limiting.
+        </p>
+        
+        <h2>🎯 Lab Completion Tests</h2>
+        <p>Click these links to verify server functionality:</p>
+        
+        <div class="button-group">
+            <a href="/Dog.png" class="button">1. Test PNG Image 🖼️</a>
+            <a href="/Books/Chapter_1.pdf" class="button">2. Test PDF Document 📄</a>
+            <a href="/Books/" class="button">3. Test Directory Listing (w/ Hit Counter) 📁</a>
+            <a href="/nonexistent-page.xyz" class="button">4. Test 404 Error ❌</a>
+        </div>
+        
+        <h2>🖼️ Embedded Image Test</h2>
+        <p>This HTML page includes an `&lt;img&gt;` tag referencing <strong>Dog.png</strong>. If you see the image below, the server correctly handled the browser's follow-up request for the image file.</p>
+        <div class="image-container">
+            <img src="Dog.png" alt="Test Dog Image">
+        </div>
+        
+        <h2>🚀 How to Run & Test</h2>
+        <p>Use Docker to run the server and the provided test scripts.</p>
+        
+        <h3>Start the Server (Docker)</h3>
+        <pre># Build and start the server in detached mode
+docker-compose up --build -d</pre>
+        
+        <h3>Test Concurrency (Lab 2)</h3>
+        <p>Run the concurrent test script. This will make 10 requests at once. A concurrent server should finish in ~1-2 seconds, while a single-threaded server would take ~10-11 seconds.</p>
+        <pre>python test_concurrent.py</pre>
+
+        <h3>Test with the Client (Lab 1)</h3>
+        <p>You can still use the Lab 1 client to test individual files:</p>
+        <pre># Test 1: Request the root page (which is index.html)
+python client.py localhost 8080 / ./downloads
+
+# Test 2: Download the PNG image (should save Dog.png)
+python client.py localhost 8080 /Dog.png ./downloads
+
+# Test 3: Test Directory Listing (should print HTML listing)
+python client.py localhost 8080 /Books/ ./downloads</pre>
+
+        <footer>
+            <p>Bulat Cristian, FAF-232 | Technical University of Moldova (UTM) | 2025</p>
+        </footer>
+    </div>
+</body>
+</html>
