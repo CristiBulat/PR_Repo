@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PR Lab 1 - HTTP Server</title>
+    <title>PR Lab 1 - HTTP Server Test Page</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -32,24 +32,37 @@
             padding-bottom: 16px;
             margin: 0 0 24px 0;
         }
-        p {
-            font-size: 18px;
+        h2 {
+            font-size: 24px;
+            color: #E5E7EB;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
+            margin: 40px 0 24px 0;
+        }
+        p, li {
+            font-size: 16px;
             line-height: 1.6;
             color: #D1D5DB;
         }
+        ul {
+            padding-left: 20px;
+        }
         .image-container {
             margin: 32px 0;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; /* Keep rounded corners */
+            overflow: hidden; /* Keep image contained */
+            /* Removed border and padding to maximize image space */
         }
-        img {
+        /* This CSS scales the image */
+        .image-container img {
             max-width: 100%;
             display: block;
+            height: auto; /* Ensures aspect ratio is maintained */
         }
         .button-group {
-            margin-top: 32px;
+            margin-top: 24px;
             display: flex;
+            flex-wrap: wrap;
             gap: 16px;
         }
         a.button {
@@ -67,37 +80,78 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 16px rgba(165, 180, 252, 0.2);
         }
-        a.button-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #E5E7EB;
+        /* Secondary style removed as it's no longer used for the 404 button */
+        /* a.button-secondary { ... } */
+
+        pre {
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #F9FAFB;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 14px;
         }
-        a.button-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        footer {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            font-size: 14px;
+            color: #9CA3AF;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🌐 Welcome to My Lab 1 HTTP Server</h1>
+        <h1>🌐 Lab 1: HTTP Server Test Dashboard</h1>
+        
+        <h2>Project Overview</h2>
         <p>
-            This page is being served by a custom Python server using raw TCP sockets.
-            This project fulfills the requirements for Lab 1 of the Network Programming course.
+            This page is served by the custom HTTP 1.1 server built for Lab 1. Use the links below to test the required functionalities and gather screenshots for your report.
         </p>
         
-        <div class="image-container">
-            <img src="dog.png" alt="Sample Dog Image">
-        </div>
-        
-        <p>
-            The server supports serving HTML, PNG, and PDF files, as well as
-            generating dynamic directory listings (with a new visual style!).
-        </p>
+        <h2>🎯 Lab Completion Tests</h2>
+        <p>Click these links to verify server functionality for your report:</p>
         
         <div class="button-group">
-            <a href="/Books/" class="button">Browse Books 📚</a>
-            <a href="/nonexistent-page.html" class="button button-secondary">Test 404 Error</a>
+            <a href="/Dog.png" class="button">1. Test PNG Image 🖼️</a>
+            <a href="/Books/Chapter_1.pdf" class="button">2. Test PDF Document 📄</a>
+            <a href="/Books/" class="button">3. Test Directory Listing 📁</a>
+            <a href="/nonexistent-page.xyz" class="button">4. Test 404 Error ❌</a>
         </div>
+        
+        <h2>🖼️ Embedded Image Test</h2>
+        <p>This HTML page includes an `&lt;img&gt;` tag referencing <strong>Dog.png</strong>. If you see the image below, the server correctly handled the browser's follow-up request for the image file.</p>
+        <div class="image-container">
+            <img src="Dog.png" alt="Test Dog Image">
+        </div>
+        
+        <h2>🚀 How to Run & Test</h2>
+        <p>Remember to use Docker and your client script as demonstrated below.</p>
+        
+        <h3>Start the Server (Docker)</h3>
+        <pre># Build and start the server in detached mode
+docker-compose up --build -d</pre>
+        
+        <h3>Test with the Client</h3>
+        <p>Use these commands in a separate terminal to test your client implementation:</p>
+        <pre># Test 1: Request the root page (which is index.html)
+python client.py localhost 8080 / ./downloads
+
+# Test 2: Download the PNG image (should save Dog.png)
+python client.py localhost 8080 /Dog.png ./downloads
+
+# Test 3: Download a PDF (should save Chapter_2.pdf)
+python client.py localhost 8080 /Books/Chapter_2.pdf ./downloads
+
+# Test 4: Test Directory Listing (should print HTML listing)
+python client.py localhost 8080 /Books/ ./downloads</pre>
+
+        <footer>
+            <p>Bulat Cristian, FAF-232 | Technical University of Moldova (UTM) | 2025</p>
+        </footer>
     </div>
 </body>
 </html>
