@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Copy application files
 COPY server.py /app/
+COPY rate_limiter.py /app/
 COPY collection/ /app/collection/
 
 # Expose port 8080

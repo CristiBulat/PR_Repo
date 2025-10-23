@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: http_server_lab1
+    container_name: http_server_lab2
     ports:
       # Map host port 8080 to container port 8080
       - "8080:8080"

@@ -1,20 +1,32 @@
 """
 HTTP File Server - Lab 2 (Concurrent)
+
 A concurrent HTTP server using a thread pool, serving files from a specified directory.
 Implements a thread-safe hit counter and IP-based rate limiting.
+
+This version is structured to support different modes for testing:
+- "single":     Single-threaded, blocking (Lab 1 behavior)
+- "multi":      Multi-threaded via ThreadPool (Lab 2 concurrency test)
+- "race":       Multi-threaded with a naive, broken counter (Lab 2 race-condition test)
+- "threadsafe": Multi-threaded with a lock-protected counter (Lab 2 fix)
+- "ratelimit":  Multi-threaded, thread-safe counter, and IP rate limiting (Lab 2 final)
 """
 
 import socket
 import sys
 import os
-import time
+import time  # Make sure time is imported
 import threading
 import collections
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import unquote
 from datetime import datetime
-from rate_limiter import RateLimiter # Import new rate limiter class
+from rate_limiter import RateLimiter  # Import your rate limiter class
 
+# === CONFIGURE SERVER MODE HERE ===
+# Change this to: "single", "multi", "race", "threadsafe", "ratelimit"
+SERVER_MODE = "single"
+# ==================================
 
 class HTTPServer:
     """Concurrent HTTP/1.1 File Server"""
@@ -34,18 +46,15 @@ class HTTPServer:
         self.directory = os.path.abspath(directory)
         self.server_socket = None
         
-        # --- Lab 2: Concurrency ---
-        # Use a thread pool to handle multiple clients concurrently
+        # ThreadPoolExecutor handles creating/managing threads.
+        # This is used for all modes except "single"
         self.executor = ThreadPoolExecutor(max_workers=20)
         
-        # --- Lab 2: Counter (2 points) ---
-        # A dictionary to store hit counts for each file/directory path
+        # Shared resources for counter modes
         self.file_counts = collections.defaultdict(int)
-        # A lock to make self.file_counts thread-safe
         self.count_lock = threading.Lock()
         
-        # --- Lab 2: Rate Limiting (2 points) ---
-        # 5 requests per second, per IP
+        # Your rate limiter, used only in "ratelimit" mode
         self.rate_limiter = RateLimiter(limit=5, per_second=1)
 
         if not os.path.exists(self.directory):
@@ -62,18 +71,26 @@ class HTTPServer:
         self.server_socket.listen(10)
         
         print(f"[INFO] Server listening on http://{self.host}:{self.port}")
-        print(f"[INFO] Using ThreadPoolExecutor with max 20 workers")
+        print(f"[INFO] *** SERVER RUNNING IN '{SERVER_MODE}' MODE ***")
+        if SERVER_MODE != "single":
+            print(f"[INFO] Using ThreadPoolExecutor with max 20 workers")
         print(f"[INFO] Press Ctrl+C to stop the server\n")
         
         try:
             while True:
+                # Accept connection in the main thread
                 client_socket, client_address = self.server_socket.accept()
                 print(f"[CONNECTION] New connection from {client_address[0]}:{client_address[1]}")
                 
-                # --- Lab 2: Concurrency ---
-                # Submit the request handling to the thread pool
-                # This loop no longer blocks and can accept new connections
-                self.executor.submit(self.handle_request, client_socket, client_address)
+                # --- Mode-switching logic ---
+                if SERVER_MODE == "single":
+                    # For "single" mode, handle the request directly in the
+                    # main thread. This is blocking, as required for the test.
+                    self.handle_request(client_socket, client_address)
+                else:
+                    # For all other modes ("multi", "race", "threadsafe", "ratelimit"),
+                    # submit the request to the thread pool to be handled concurrently.
+                    self.executor.submit(self.handle_request, client_socket, client_address)
                 
         except KeyboardInterrupt:
             print("\n[INFO] Server shutting down...")
@@ -84,59 +101,72 @@ class HTTPServer:
             print("[INFO] Server shutdown complete.")
     
     def handle_request(self, client_socket, client_address):
-        """Handle a single HTTP request (runs in a worker thread)"""
-        client_ip = client_address[0]
-        
-        # --- Lab 2: Rate Limiting (2 points) ---
-        if not self.rate_limiter.allow(client_ip):
-            print(f"[RATE_LIMIT] Denied request from {client_ip} (429 Too Many Requests)")
-            self.send_error(client_socket, 429, "Too Many Requests")
-            client_socket.close()
-            return
+            """
+            Handle a single HTTP request.
+            This runs in the main thread for "single" mode
+            or in a worker thread for all other modes.
+            """
+            client_ip = client_address[0]
             
-        try:
-            request_data = client_socket.recv(4096).decode('utf-8')
-            if not request_data:
-                return
-            
-            # --- Lab 2: Simulate Work Delay ---
-            # Add ~1s delay to simulate work and test concurrency [cite: 1708]
-            print(f"[THREAD] Handling request from {client_ip} (simulating 1s work)...")
-            time.sleep(1)
-            
-            lines = request_data.split('\r\n')
-            request_line = lines[0]
-            print(f"[REQUEST] {request_line}")
-            
-            parts = request_line.split()
-            if len(parts) < 2:
-                self.send_error(client_socket, 400, "Bad Request")
-                return
-            
-            method = parts[0]
-            path = unquote(parts[1])
-            
-            if method != 'GET':
-                self.send_error(client_socket, 405, "Method Not Allowed")
-                return
-            
-            self.serve_path(client_socket, path)
-            
-        except Exception as e:
-            print(f"[ERROR] Error handling request: {e}")
+            # --- Rate Limit Check ---
+            # Only apply rate limiting if in the correct mode
+            if SERVER_MODE == "ratelimit":
+                if not self.rate_limiter.allow(client_ip):
+                    print(f"[RATE_LIMIT] Denied request from {client_ip} (429 Too Many Requests)")
+                    self.send_error(client_socket, 429, "Too Many Requests")
+                    client_socket.close()
+                    return
+                
             try:
-                self.send_error(client_socket, 500, "Internal Server Error")
-            except:
-                pass
-        finally:
-            client_socket.close()
+                # 1. Read the request data
+                request_data = client_socket.recv(4096).decode('utf-8')
+                if not request_data:
+                    return
+                
+                # --- Lab 2 Concurrency Test Delay ---
+                # This delay MUST only run in concurrent modes.
+                # In "single" mode, it would block the main thread and cause a deadlock.
+                if SERVER_MODE != "single":
+                    print(f"[THREAD] Handling request from {client_ip} (simulating 1s work)...")
+                    time.sleep(1)
+                
+                # 3. Process the request
+                lines = request_data.split('\r\n')
+                request_line = lines[0]
+                print(f"[REQUEST] {request_line}")
+                
+                parts = request_line.split()
+                if len(parts) < 2:
+                    self.send_error(client_socket, 400, "Bad Request")
+                    return
+                
+                method = parts[0]
+                path = unquote(parts[1])
+                
+                if method != 'GET':
+                    self.send_error(client_socket, 405, "Method Not Allowed")
+                    return
+                
+                # 4. Serve the path (which will send the response)
+                self.serve_path(client_socket, path)
+                
+            except Exception as e:
+                print(f"[ERROR] Error handling request: {e}")
+                try:
+                    self.send_error(client_socket, 500, "Internal Server Error")
+                except:
+                    pass
+            finally:
+                # This closes the socket for this specific request
+                client_socket.close()
             print(f"[CONNECTION] Closed connection from {client_ip}")
     
     def serve_path(self, client_socket, path):
         """Serve a file or directory listing"""
         
-        original_path = path # Store original path for counter
+        original_path = path  # Store original path for counter
         
+        # If root is requested, your collection/index.html will be served
         if path == '/':
             path = '/index.html'
         
@@ -153,6 +183,13 @@ class HTTPServer:
             return
         
         if not os.path.exists(full_path):
+            # This logic handles if /index.html doesn't exist,
+            # but / was requested, it serves the directory listing instead.
+            if path == '/index.html' and original_path == '/':
+                self.increment_counter(original_path) # Count the directory '/'
+                self.serve_directory_listing(client_socket, self.directory, '/')
+                return
+
             self.send_error(client_socket, 404, "Not Found")
             return
         
@@ -160,30 +197,56 @@ class HTTPServer:
             if not path.endswith('/'):
                 path += '/'
             
-            # --- Lab 2: Counter ---
-            # Use original_path (e.g., "/Books/") as the key for the counter
-            self.increment_counter(original_path if original_path.endswith('/') else original_path + '/')
-            self.serve_directory_listing(client_socket, full_path, path)
+            # Check for an index.html in the subdirectory (e.g., /Books/index.html)
+            index_path = os.path.join(full_path, 'index.html')
+            if os.path.exists(index_path):
+                self.increment_counter(original_path if original_path.endswith('/') else original_path + '/')
+                self.serve_file(client_socket, index_path)
+            else:
+                # No index.html, serve the directory listing
+                self.increment_counter(original_path if original_path.endswith('/') else original_path + '/')
+                self.serve_directory_listing(client_socket, full_path, path)
             return
         
         if os.path.isfile(full_path):
-            # --- Lab 2: Counter ---
-            # Use original_path (e.g., "/Dog.png") as the key
-            self.increment_counter(original_path)
+            # This handles the case where /index.html *was* found
+            if path == '/index.html' and original_path == '/':
+                self.increment_counter(original_path) # Count '/'
+            else:
+                self.increment_counter(original_path) # Count the file
             self.serve_file(client_socket, full_path)
     
     def increment_counter(self, path):
         """Thread-safely increment the hit counter for a given path"""
-        # --- Lab 2: Counter (2 points) ---
-        # Use the lock to prevent race conditions [cite: 1717]
-        with self.count_lock:
-            self.file_counts[path] += 1
-            print(f"[COUNTER] Path {path} now has {self.file_counts[path]} hits.")
+        
+        if SERVER_MODE == "race":
+            # --- Naive implementation ---
+            # This code is intentionally broken to demonstrate a race condition.
+            current_count = self.file_counts.get(path, 0)
+            time.sleep(0.001) # Small delay to make a race condition more likely
+            self.file_counts[path] = current_count + 1
+            print(f"[COUNTER] Path {path} now has {self.file_counts[path]} hits (RACE).")
+
+        elif SERVER_MODE == "threadsafe" or SERVER_MODE == "ratelimit":
+            # --- Thread-Safe implementation ---
+            # This code uses a lock to protect the shared dictionary
+            with self.count_lock:
+                current_count = self.file_counts.get(path, 0)
+                time.sleep(0.001) # Simulate work
+                self.file_counts[path] = current_count + 1
+                print(f"[COUNTER] Path {path} now has {self.file_counts[path]} hits (SAFE).")
+        
+        # In "single" or "multi" modes, this function does nothing.
 
     def get_count(self, path):
         """Thread-safely get the hit counter for a given path"""
-        with self.count_lock:
-            return self.file_counts.get(path, 0)
+        count = 0
+        if SERVER_MODE in ["race", "threadsafe", "ratelimit"]:
+            # Reads must also be locked to prevent reading
+            # while another thread is in the middle of writing.
+            with self.count_lock:
+                count = self.file_counts.get(path, 0)
+        return count
 
     def serve_file(self, client_socket, file_path):
         """Serve a file to the client"""
@@ -215,6 +278,7 @@ class HTTPServer:
             if not url_path.endswith('/'):
                 url_path += '/'
             
+            # --- Use your beautiful HTML template ---
             html = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -295,32 +359,40 @@ class HTTPServer:
                 if parent_path == '//': parent_path = '/'
                 html += f'<a href="{parent_path}" class="parent-link"><span class="icon">⬆️</span> Parent Directory</a>\n'
             
-            # --- Lab 2: Counter ---
-            # Add "Hits" column to table header
-            html += '<table>\n<thead><tr><th>Name</th><th class="hits">Hits</th><th class="size">Size</th></tr></thead>\n<tbody>\n'
+            # --- Conditional Hits Column ---
+            # Only show the "Hits" column if in a mode that supports it
+            show_hits = SERVER_MODE in ["race", "threadsafe", "ratelimit"]
+            
+            html += '<table>\n<thead><tr><th>Name</th>'
+            if show_hits:
+                html += '<th class="hits">Hits</th>'
+            html += '<th class="size">Size</th></tr></thead>\n<tbody>\n'
             
             # Add directories
             for d in dirs:
-                # Get count for the directory path (e.g., /Books/Subdir/)
                 dir_full_path = url_path + d + '/'
-                count = self.get_count(dir_full_path)
-                html += f'<tr><td><a href="{d}/"><span class="icon">📁</span>{d}/</a></td><td class="hits">{count}</td><td class="size">-</td></tr>\n'
+                html += f'<tr><td><a href="{d}/"><span class="icon">📁</span>{d}/</a></td>'
+                if show_hits:
+                    count = self.get_count(dir_full_path)
+                    html += f'<td class="hits">{count}</td>'
+                html += '<td class="size">-</td></tr>\n'
             
             # Add files
             for f in files:
                 size = os.path.getsize(os.path.join(dir_path, f))
                 size_str = self.format_size(size)
-                
-                # Get count for the file path (e.g., /Books/file.pdf)
                 file_full_path = url_path + f
-                count = self.get_count(file_full_path)
                 
                 icon = "📄"
                 if f.endswith('.pdf'): icon = "📚"
                 if f.endswith(('.png', '.jpg', '.jpeg', '.gif')): icon = "🖼️"
                 if f.endswith('.html'): icon = "🌐"
                 
-                html += f'<tr><td><a href="{f}"><span class="icon">{icon}</span>{f}</a></td><td class="hits">{count}</td><td class="size">{size_str}</td></tr>\n'
+                html += f'<tr><td><a href="{f}"><span class="icon">{icon}</span>{f}</a></td>'
+                if show_hits:
+                    count = self.get_count(file_full_path)
+                    html += f'<td class="hits">{count}</td>'
+                html += f'<td class="size">{size_str}</td></tr>\n'
             
             html += """        </tbody>
     </table>
