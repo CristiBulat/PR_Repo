@@ -25,7 +25,7 @@ from rate_limiter import RateLimiter  # Import your rate limiter class
 
 # === CONFIGURE SERVER MODE HERE ===
 # Change this to: "single", "multi", "race", "threadsafe", "ratelimit"
-SERVER_MODE = "single"
+SERVER_MODE = "ratelimit"
 # ==================================
 
 class HTTPServer:
@@ -101,64 +101,63 @@ class HTTPServer:
             print("[INFO] Server shutdown complete.")
     
     def handle_request(self, client_socket, client_address):
-            """
-            Handle a single HTTP request.
-            This runs in the main thread for "single" mode
-            or in a worker thread for all other modes.
-            """
-            client_ip = client_address[0]
-            
-            # --- Rate Limit Check ---
-            # Only apply rate limiting if in the correct mode
-            if SERVER_MODE == "ratelimit":
-                if not self.rate_limiter.allow(client_ip):
-                    print(f"[RATE_LIMIT] Denied request from {client_ip} (429 Too Many Requests)")
-                    self.send_error(client_socket, 429, "Too Many Requests")
-                    client_socket.close()
-                    return
-                
-            try:
-                # 1. Read the request data
-                request_data = client_socket.recv(4096).decode('utf-8')
-                if not request_data:
-                    return
-                
-                # --- Lab 2 Concurrency Test Delay ---
-                # This delay MUST only run in concurrent modes.
-                # In "single" mode, it would block the main thread and cause a deadlock.
-                if SERVER_MODE != "single":
-                    print(f"[THREAD] Handling request from {client_ip} (simulating 1s work)...")
-                    time.sleep(1)
-                
-                # 3. Process the request
-                lines = request_data.split('\r\n')
-                request_line = lines[0]
-                print(f"[REQUEST] {request_line}")
-                
-                parts = request_line.split()
-                if len(parts) < 2:
-                    self.send_error(client_socket, 400, "Bad Request")
-                    return
-                
-                method = parts[0]
-                path = unquote(parts[1])
-                
-                if method != 'GET':
-                    self.send_error(client_socket, 405, "Method Not Allowed")
-                    return
-                
-                # 4. Serve the path (which will send the response)
-                self.serve_path(client_socket, path)
-                
-            except Exception as e:
-                print(f"[ERROR] Error handling request: {e}")
-                try:
-                    self.send_error(client_socket, 500, "Internal Server Error")
-                except:
-                    pass
-            finally:
-                # This closes the socket for this specific request
+        """
+        Handle a single HTTP request.
+        This runs in the main thread for "single" mode
+        or in a worker thread for all other modes.
+        """
+        client_ip = client_address[0]
+        
+        # --- Rate Limit Check ---
+        # Only apply rate limiting if in the correct mode
+        if SERVER_MODE == "ratelimit":
+            if not self.rate_limiter.allow(client_ip):
+                print(f"[RATE_LIMIT] Denied request from {client_ip} (429 Too Many Requests)")
+                self.send_error(client_socket, 429, "Too Many Requests")
                 client_socket.close()
+                return
+            
+        try:
+            # 1. Read the request data
+            request_data = client_socket.recv(4096).decode('utf-8')
+            if not request_data:
+                return
+            
+            # --- Lab 2 Concurrency Test Delay ---
+            # Add 1s delay to simulate work, as required by the lab pdf.
+            # This makes the "single" vs "multi" test possible.
+            print(f"[THREAD] Handling request from {client_ip} (simulating 1s work)...")
+            time.sleep(1)
+            
+            # 3. Process the request
+            lines = request_data.split('\r\n')
+            request_line = lines[0]
+            print(f"[REQUEST] {request_line}")
+            
+            parts = request_line.split()
+            if len(parts) < 2:
+                self.send_error(client_socket, 400, "Bad Request")
+                return
+            
+            method = parts[0]
+            path = unquote(parts[1])
+            
+            if method != 'GET':
+                self.send_error(client_socket, 405, "Method Not Allowed")
+                return
+            
+            # 4. Serve the path (which will send the response)
+            self.serve_path(client_socket, path)
+            
+        except Exception as e:
+            print(f"[ERROR] Error handling request: {e}")
+            try:
+                self.send_error(client_socket, 500, "Internal Server Error")
+            except:
+                pass
+        finally:
+            # This closes the socket for this specific request
+            client_socket.close()
             print(f"[CONNECTION] Closed connection from {client_ip}")
     
     def serve_path(self, client_socket, path):

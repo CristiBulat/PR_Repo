@@ -67,9 +67,9 @@ def get_counter_value(host, port, target_dir_path, target_file):
         # Parse HTML to find counter value
         html = response.decode('utf-8', errors='ignore')
 
-        # Look for the target file and its hit count
-        # Pattern: <td><a href="/Books/Chapter_1.pdf">Chapter_1.pdf</a></td><td>123</td>
-        pattern = rf'<a href="{re.escape(target_dir_path + target_file)}">{re.escape(target_file)}</a></td><td>(\d+)</td>'
+        # FIXED: Simpler pattern that handles icon spans and class names
+        # Looks for: filename.pdf</a></td><td class="hits">123</td>
+        pattern = rf'{re.escape(target_file)}</a></td><td class="hits">(\d+)</td>'
         match = re.search(pattern, html)
 
         if match:
@@ -137,31 +137,59 @@ def test_race_condition(host, port, target_path, num_requests):
     print(f"\n{'=' * 60}")
     print(f"Results")
     print(f"{'=' * 60}")
-    print(f"Successful requests (should be new hits): {successful}")
+    print(f"Successful requests: {successful}")
+    
     if counter_value is not None:
-        print(f"Actual counter value read from HTML: {counter_value}")
-        print("Note: This test is hard to verify automatically.")
-        print(f"If you set SERVER_MODE to 'race', the counter will likely be less than {successful}.")
-        print(f"If you set SERVER_MODE to 'threadsafe', the counter should be exactly {successful} (plus any previous hits).")
+        print(f"Actual counter value: {counter_value}")
+        print(f"\n{'=' * 60}")
+        print(f"Analysis")
+        print(f"{'=' * 60}")
+        
+        # Calculate lost updates
+        lost_updates = num_requests - counter_value
+        lost_percentage = (lost_updates / num_requests) * 100
+        
+        if lost_updates == 0:
+            print(f"✅ THREAD-SAFE: Counter is perfect!")
+            print(f"   All {num_requests} requests were counted correctly.")
+            print(f"   No race condition detected.")
+        else:
+            print(f"❌ RACE CONDITION DETECTED!")
+            print(f"   Expected counter: {num_requests}")
+            print(f"   Actual counter: {counter_value}")
+            print(f"   Lost updates: {lost_updates} ({lost_percentage:.1f}%)")
+            print(f"\n   This demonstrates the race condition!")
+            print(f"   Multiple threads read the same value, then all wrote back")
+            print(f"   the same incremented value, losing concurrent updates.")
+        
+        print(f"\n{'=' * 60}")
+        print(f"Interpretation")
+        print(f"{'=' * 60}")
+        print(f"• If SERVER_MODE = 'race': Counter will be < {num_requests} (race condition)")
+        print(f"• If SERVER_MODE = 'threadsafe': Counter will be = {num_requests} (correct)")
+        print(f"• If SERVER_MODE = 'ratelimit': Counter will be = {num_requests} (correct)")
     else:
-        print("Could not verify counter value from HTML.")
-
+        print("❌ Could not verify counter value from HTML.")
+        print("   Check that the server is running in a mode that supports counters.")
+        print("   Valid modes: 'race', 'threadsafe', 'ratelimit'")
 
     return counter_value
 
 
 def main():
     host = '127.0.0.1'
-    # Use your port 8080
     port = 8080
-    # Use a file from your collection
     target_file = '/Books/Chapter_1.pdf'
     num_requests = 100  # Number of concurrent requests
 
+    print("=" * 60)
     print("Race Condition Testing Tool")
     print("=" * 60)
-    print("WARNING: This test assumes the counter for the file starts at 0.")
-    print("For best results, restart the server before running.")
+    print("\nThis test demonstrates race conditions in concurrent code.")
+    print("\nWARNING: For best results, restart the server before running.")
+    print("         This ensures the counter starts at 0.\n")
+    print(f"Command: docker-compose restart\n")
+    print("=" * 60)
 
     # Run the test
     counter = test_race_condition(host, port, target_file, num_requests)
