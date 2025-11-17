@@ -64,3 +64,9 @@ desktop.ini
 downloads/
 vps_downloads/
 friends_downloads/
+
+.DS_Store
+/node_modules/
+/package-lock.json
+/dist/
+/coverage/
