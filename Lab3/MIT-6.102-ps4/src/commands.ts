@@ -21,8 +21,7 @@ import { Board } from './board.js';
  *          described in the ps4 handout
  */
 export async function look(board: Board, playerId: string): Promise<string> {
-    throw new Error('look function not implemented');
-    // implement with glue code only, at most three lines
+    return board.look(playerId);
 }
 
 /**
@@ -43,8 +42,7 @@ export async function look(board: Board, playerId: string): Promise<string> {
  *         in the ps4 handout.
  */
 export async function flip(board: Board, playerId: string, row: number, column: number): Promise<string> {
-    throw new Error('flip function not implemented');
-    // implement with glue code only, at most three lines
+    return await board.flip(playerId, row, column);
 }
 
 /**
@@ -71,8 +69,8 @@ export async function flip(board: Board, playerId: string, row: number, column: 
  *          in the format described in the ps4 handout
  */
 export async function map(board: Board, playerId: string, f: (card: string) => Promise<string>): Promise<string> {
-    throw new Error('map function not implemented');
-    // implement with glue code only, at most three lines
+    await board.map(f);
+    return board.look(playerId);
 }
 
 /**
@@ -86,6 +84,6 @@ export async function map(board: Board, playerId: string, f: (card: string) => P
  *          format described in the ps4 handout
  */
 export async function watch(board: Board, playerId: string): Promise<string> {
-    throw new Error('watch function not implemented');
-    // implement with glue code only, at most three lines
+    await board.waitForChange();
+    return board.look(playerId);
 }

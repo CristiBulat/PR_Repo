@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  memory-scramble:
+    build: .
+    container_name: memory-scramble-game
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - BOARD_FILE=boards/perfect.txt
+    volumes:
+      # Mount boards directory so you can change boards without rebuilding
+      - ./boards:/app/boards
+      # Mount source for development (optional)
+      - ./src:/app/src
+    command: npm start 8080 boards/perfect.txt
+    restart: unless-stopped
+    networks:
+      - game-network
+
+networks:
+  game-network:
+    driver: bridge
