@@ -1,0 +1,11 @@
+# Lab 4: Key-Value Store with Single-Leader Replication
+# Python dependencies
+
+# Web framework for HTTP API
+flask>=2.0.0
+
+# HTTP client for leader->follower communication
+requests>=2.25.0
+
+# For performance visualization (optional)
+matplotlib>=3.5.0

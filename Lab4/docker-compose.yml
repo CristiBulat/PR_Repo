@@ -1,0 +1,160 @@
+# Lab 4: Key-Value Store with Single-Leader Replication
+# Docker Compose configuration for 1 leader + 5 followers
+#
+# Architecture:
+#   - Leader (port 5000): Accepts writes, replicates to followers
+#   - Followers (ports 5001-5005): Accept reads, receive replicated writes
+#
+# Semi-synchronous replication:
+#   - WRITE_QUORUM controls how many followers must confirm before write succeeds
+#   - Set to 1 by default (can change to 2, 3, 4, or 5)
+#
+# Network delay simulation:
+#   - MIN_DELAY and MAX_DELAY simulate network latency (in seconds)
+#   - Default: 0.1ms to 10ms
+
+services:
+  # ==========================================================================
+  # LEADER NODE
+  # ==========================================================================
+  leader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kv_leader
+    ports:
+      - "5000:5000"
+    environment:
+      # Node configuration
+      - HOST=0.0.0.0
+      - PORT=5000
+      
+      # List of follower URLs for replication
+      - FOLLOWERS=http://follower1:5001,http://follower2:5002,http://follower3:5003,http://follower4:5004,http://follower5:5005
+      
+      # Semi-synchronous replication: require N followers to confirm
+      # Change this value to test different quorum sizes (1-5)
+      - WRITE_QUORUM=1
+      
+      # Network delay simulation (in seconds)
+      # ~0.1ms minimum, ~10ms maximum as per lab requirements
+      - MIN_DELAY=0.0001
+      - MAX_DELAY=0.01
+      
+      # Thread pool for concurrent replication
+      - REPLICATION_WORKERS=10
+      
+      # Timeout for replication requests
+      - REPLICATION_TIMEOUT=5.0
+    
+    command: python -u leader.py
+    networks:
+      - kv_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ==========================================================================
+  # FOLLOWER NODES (5 instances)
+  # ==========================================================================
+  follower1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kv_follower1
+    ports:
+      - "5001:5001"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5001
+      - NODE_ID=follower1
+      - LEADER_URL=http://leader:5000
+    command: python -u follower.py
+    networks:
+      - kv_network
+    restart: unless-stopped
+    depends_on:
+      - leader
+
+  follower2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kv_follower2
+    ports:
+      - "5002:5002"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5002
+      - NODE_ID=follower2
+      - LEADER_URL=http://leader:5000
+    command: python -u follower.py
+    networks:
+      - kv_network
+    restart: unless-stopped
+    depends_on:
+      - leader
+
+  follower3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kv_follower3
+    ports:
+      - "5003:5003"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5003
+      - NODE_ID=follower3
+      - LEADER_URL=http://leader:5000
+    command: python -u follower.py
+    networks:
+      - kv_network
+    restart: unless-stopped
+    depends_on:
+      - leader
+
+  follower4:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kv_follower4
+    ports:
+      - "5004:5004"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5004
+      - NODE_ID=follower4
+      - LEADER_URL=http://leader:5000
+    command: python -u follower.py
+    networks:
+      - kv_network
+    restart: unless-stopped
+    depends_on:
+      - leader
+
+  follower5:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kv_follower5
+    ports:
+      - "5005:5005"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5005
+      - NODE_ID=follower5
+      - LEADER_URL=http://leader:5000
+    command: python -u follower.py
+    networks:
+      - kv_network
+    restart: unless-stopped
+    depends_on:
+      - leader
+
+networks:
+  kv_network:
+    driver: bridge
