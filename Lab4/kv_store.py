@@ -6,7 +6,7 @@ Supports concurrent read and write operations using locks.
 
 import threading
 from typing import Dict, Optional, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class KeyValueStore:
@@ -71,7 +71,7 @@ class KeyValueStore:
             value: The value to associate with the key (must be JSON-serializable)
         
         Returns:
-            The new version number after the write
+            The per-key version number after the write (for replication ordering)
         
         Preconditions:
             - key is a non-empty string
@@ -79,19 +79,29 @@ class KeyValueStore:
         
         Postconditions:
             - Store contains the key-value pair
-            - Version is incremented
+            - Global and per-key versions are incremented
             - Write is logged
         """
         with self._lock:
+            # Track per-key versions for replication ordering
+            if not hasattr(self, '_key_versions'):
+                self._key_versions: Dict[str, int] = {}
+            
             self._store[key] = value
             self._version += 1
+            
+            # Increment per-key version (this is what we send to followers)
+            self._key_versions[key] = self._key_versions.get(key, 0) + 1
+            key_version = self._key_versions[key]
+            
             self._write_log.append({
                 'version': self._version,
+                'key_version': key_version,
                 'key': key,
                 'value': value,
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             })
-            return self._version
+            return key_version  # Return per-key version for replication
     
     def delete(self, key: str) -> bool:
         """
@@ -166,22 +176,37 @@ class KeyValueStore:
         Apply a replicated write from the leader.
         Used by followers to apply writes received from the leader.
         
+        Uses per-key versioning to handle out-of-order replication.
+        Only applies the write if it's newer than the current value for that key.
+        
         Args:
             key: The key to set
             value: The value to set
-            version: The version from the leader
+            version: The version from the leader (used as ordering)
         
         Returns:
             True if write was applied successfully
         
         Postconditions:
-            - Store contains the key-value pair
+            - Store contains the key-value pair (if version is newer)
             - Local version is updated to match leader's version
         """
         with self._lock:
-            self._store[key] = value
-            self._version = max(self._version, version)
-            return True
+            # Track per-key versions to handle out-of-order replication
+            if not hasattr(self, '_key_versions'):
+                self._key_versions: Dict[str, int] = {}
+            
+            # Only apply if this version is newer than what we have for this key
+            current_key_version = self._key_versions.get(key, 0)
+            
+            if version > current_key_version:
+                self._store[key] = value
+                self._key_versions[key] = version
+                self._version = max(self._version, version)
+                return True
+            else:
+                # Skip older write (out-of-order replication)
+                return True  # Still return True - not an error, just skipped
     
     def clear(self) -> None:
         """Clear all data from the store (for testing purposes)."""

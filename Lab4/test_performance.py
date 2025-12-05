@@ -23,7 +23,7 @@ import argparse
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Tuple, Any
-from datetime import datetime
+from datetime import datetime, timezone
 import statistics
 
 
@@ -181,7 +181,7 @@ def run_performance_test(num_writes: int = NUM_WRITES,
             value = {
                 'key_id': i,
                 'write_id': j,
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }
             tasks.append((key, value))
     
@@ -377,7 +377,7 @@ def save_results(stats: Dict, filename: str = "results.json") -> None:
             all_results = []
         
         # Add timestamp
-        stats['timestamp'] = datetime.utcnow().isoformat()
+        stats['timestamp'] = datetime.now(timezone.utc).isoformat()
         all_results.append(stats)
         
         # Save
@@ -391,64 +391,116 @@ def save_results(stats: Dict, filename: str = "results.json") -> None:
 
 def plot_quorum_comparison(filename: str = "results.json") -> None:
     """
-    Plot write quorum vs average latency from saved results.
-    
+    Plot write quorum vs latency and write quorum vs data consistency.
+
     Run the performance test multiple times with different WRITE_QUORUM values,
-    then call this function to generate the comparison plot.
+    then call this function to generate the comparison plots.
     """
     try:
         import matplotlib.pyplot as plt
-        
+
         # Load results
         with open(filename, 'r') as f:
             results = json.load(f)
-        
+
         if not results:
             print("No results to plot!")
             return
-        
-        # Group by quorum
+
+        # Group by quorum (take latest result for each quorum)
         quorum_data = {}
         for r in results:
             q = r.get('quorum', 0)
-            if q not in quorum_data:
-                quorum_data[q] = []
-            quorum_data[q].append(r)
-        
-        # Calculate averages per quorum
+            quorum_data[q] = r  # Overwrite with latest
+
+        # Sort by quorum
         quorums = sorted(quorum_data.keys())
-        avg_latencies = []
-        throughputs = []
-        
+
+        # Extract latency metrics (in seconds)
+        mean_latencies = [quorum_data[q]['avg_latency'] for q in quorums]
+        median_latencies = [quorum_data[q]['median_latency'] for q in quorums]
+        p95_latencies = [quorum_data[q]['p95_latency'] for q in quorums]
+        p99_latencies = [quorum_data[q]['p99_latency'] for q in quorums]
+
+        # Extract consistency metrics
+        failed_writes = [quorum_data[q]['failed_writes'] for q in quorums]
+        total_mismatches = []
         for q in quorums:
-            data = quorum_data[q]
-            avg_lat = statistics.mean([d['avg_latency'] * 1000 for d in data])  # Convert to ms
-            avg_throughput = statistics.mean([d['throughput'] for d in data])
-            avg_latencies.append(avg_lat)
-            throughputs.append(avg_throughput)
-        
-        # Create plot
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-        
-        # Plot 1: Latency vs Quorum
-        ax1.bar(quorums, avg_latencies, color='steelblue')
-        ax1.set_xlabel('Write Quorum')
-        ax1.set_ylabel('Average Latency (ms)')
-        ax1.set_title('Write Quorum vs Average Latency')
-        ax1.set_xticks(quorums)
-        
-        # Plot 2: Throughput vs Quorum
-        ax2.bar(quorums, throughputs, color='seagreen')
-        ax2.set_xlabel('Write Quorum')
-        ax2.set_ylabel('Throughput (writes/sec)')
-        ax2.set_title('Write Quorum vs Throughput')
-        ax2.set_xticks(quorums)
-        
+            consistency = quorum_data[q].get('consistency', {})
+            followers = consistency.get('followers', [])
+            mismatches = sum(f.get('mismatches', 0) for f in followers)
+            total_mismatches.append(mismatches)
+
+        # =====================================================================
+        # PLOT 1: Write Quorum vs Latency (line plot with actual test data)
+        # =====================================================================
+        fig1, ax1 = plt.subplots(figsize=(10, 6))
+
+        x_labels = [f'Q={q}' for q in quorums]
+        x_pos = range(len(quorums))
+
+        # Use actual test data directly
+        ax1.plot(x_pos, mean_latencies, 'b-o', label='mean', linewidth=2, markersize=6)
+        ax1.plot(x_pos, median_latencies, color='orange', marker='o', linestyle='-', label='median', linewidth=2, markersize=6)
+        ax1.plot(x_pos, p95_latencies, 'g-o', label='p95', linewidth=2, markersize=6)
+        ax1.plot(x_pos, p99_latencies, 'r-o', label='p99', linewidth=2, markersize=6)
+
+        ax1.set_xlabel('Quorum value', fontsize=12)
+        ax1.set_ylabel('Latency (s)', fontsize=12)
+        ax1.set_title('Quorum vs. Latency, follower delays [50ms-250ms]', fontsize=14)
+        ax1.set_xticks(x_pos)
+        ax1.set_xticklabels(x_labels)
+        ax1.legend(loc='upper left')
+        ax1.grid(True, alpha=0.3)
+
         plt.tight_layout()
-        plt.savefig('quorum_analysis.png', dpi=150)
-        print(f"Plot saved to quorum_analysis.png")
-        plt.show()
-    
+        plt.savefig('quorum_vs_latency.png', dpi=150)
+        print("Plot saved to quorum_vs_latency.png")
+        plt.close()
+
+        # =====================================================================
+        # PLOT 2: Write Quorum vs Data Consistency
+        # =====================================================================
+        fig2, ax2 = plt.subplots(figsize=(10, 6))
+
+        # Create bar chart for failed writes and mismatches
+        bar_width = 0.35
+        x_pos = range(len(quorums))
+
+        bars1 = ax2.bar([x - bar_width/2 for x in x_pos], failed_writes, bar_width,
+                        label='Failed Writes', color='#e74c3c')
+        bars2 = ax2.bar([x + bar_width/2 for x in x_pos], total_mismatches, bar_width,
+                        label='Data Mismatches', color='#3498db')
+
+        ax2.set_xlabel('Quorum value', fontsize=12)
+        ax2.set_ylabel('Count', fontsize=12)
+        ax2.set_title('Write Quorum vs. Data Consistency', fontsize=14)
+        ax2.set_xticks(x_pos)
+        ax2.set_xticklabels(x_labels)
+        ax2.legend()
+        ax2.grid(True, alpha=0.3, axis='y')
+
+        # Add value labels on bars
+        for bar in bars1:
+            height = bar.get_height()
+            ax2.annotate(f'{int(height)}',
+                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3), textcoords="offset points",
+                        ha='center', va='bottom', fontsize=10)
+        for bar in bars2:
+            height = bar.get_height()
+            ax2.annotate(f'{int(height)}',
+                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3), textcoords="offset points",
+                        ha='center', va='bottom', fontsize=10)
+
+        plt.tight_layout()
+        plt.savefig('quorum_vs_consistency.png', dpi=150)
+        print("Plot saved to quorum_vs_consistency.png")
+        plt.close()
+
+        print("\nBoth plots generated successfully!")
+
     except ImportError:
         print("matplotlib not installed. Install with: pip install matplotlib")
     except FileNotFoundError:

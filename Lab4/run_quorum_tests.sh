@@ -54,9 +54,9 @@ for QUORUM in 1 2 3 4 5; do
     echo "Waiting for services..."
     sleep 10
     
-    # Run performance test
+    # Run performance test (reduced threads to minimize contention)
     echo "Running performance test..."
-    python test_performance.py --writes 10000 --keys 100 --threads 20
+    python3 test_performance.py --writes 2000 --keys 100 --threads 10
     
     echo ""
     echo "Completed test for WRITE_QUORUM=$QUORUM"

@@ -19,7 +19,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 from flask import Flask, request, jsonify
 from kv_store import KeyValueStore
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 
 # =============================================================================
 # CONFIGURATION - Read from environment variables
@@ -64,7 +64,7 @@ stats = {
     'writes_failed': 0,
     'replication_successes': 0,
     'replication_failures': 0,
-    'start_time': datetime.utcnow().isoformat()
+    'start_time': datetime.now(timezone.utc).isoformat()
 }
 stats_lock = threading.Lock()
 
@@ -86,36 +86,61 @@ def get_simulated_delay() -> float:
     return random.uniform(MIN_DELAY, MAX_DELAY)
 
 
+def get_follower_delay(follower_url: str) -> float:
+    """
+    Generate a delay based on follower ID to simulate different network distances.
+
+    Follower1 is closest (fastest), Follower5 is furthest (slowest).
+    This ensures quorum impact is visible: Q=1 waits for fastest, Q=5 waits for slowest.
+
+    Returns:
+        Delay in seconds based on follower number
+    """
+    # Extract follower number from URL (e.g., "http://follower3:5003" -> 3)
+    try:
+        for i in range(1, 6):
+            if f"follower{i}" in follower_url:
+                # Each follower has a base delay + small random variation
+                # Follower1: ~MIN_DELAY, Follower5: ~MAX_DELAY
+                base_delay = MIN_DELAY + (MAX_DELAY - MIN_DELAY) * (i - 1) / 4
+                variation = random.uniform(-0.01, 0.01) * base_delay  # ±1% variation
+                return max(0.001, base_delay + variation)
+    except:
+        pass
+    return random.uniform(MIN_DELAY, MAX_DELAY)
+
+
 def replicate_to_follower(follower_url: str, key: str, value, version: int) -> dict:
     """
     Replicate a write operation to a single follower.
-    
+
     This function:
     1. Simulates network delay before sending the request
     2. Sends the write request to the follower
     3. Returns the result (success/failure)
-    
+
     Args:
         follower_url: The base URL of the follower node
         key: The key being written
         value: The value being written
         version: The version number of this write
-    
+
     Returns:
         A dictionary with 'success' (bool) and 'follower' (str) fields
-    
+
     Preconditions:
         - follower_url is a valid URL string
         - key is a non-empty string
         - value is JSON-serializable
         - version is a positive integer
-    
+
     Postconditions:
         - Returns success status for this specific follower
         - Network delay is applied before the request
     """
-    # Simulate network delay BEFORE sending the request (as per lab requirements)
-    delay = get_simulated_delay()
+    # Simulate network delay based on follower distance
+    # Follower1 = fast (close), Follower5 = slow (far)
+    delay = get_follower_delay(follower_url)
     time.sleep(delay)
     
     try:

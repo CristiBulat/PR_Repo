@@ -13,7 +13,7 @@ import os
 import sys
 from flask import Flask, request, jsonify
 from kv_store import KeyValueStore
-from datetime import datetime
+from datetime import datetime, timezone
 import threading
 
 # =============================================================================
@@ -43,7 +43,7 @@ stats = {
     'replications_received': 0,
     'replications_applied': 0,
     'write_rejections': 0,
-    'start_time': datetime.utcnow().isoformat()
+    'start_time': datetime.now(timezone.utc).isoformat()
 }
 stats_lock = threading.Lock()
 

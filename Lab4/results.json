@@ -1,0 +1,342 @@
+[
+  {
+    "quorum": 1,
+    "total_writes": 2000,
+    "successful_writes": 2000,
+    "failed_writes": 0,
+    "total_time": 16.23186683654785,
+    "throughput": 123.21441644018283,
+    "avg_latency": 0.08093949031829833,
+    "median_latency": 0.07727491855621338,
+    "min_latency": 0.038500070571899414,
+    "max_latency": 0.14954686164855957,
+    "std_latency": 0.012444484720442876,
+    "p95_latency": 0.1081240177154541,
+    "p99_latency": 0.12966489791870117,
+    "consistency": {
+      "leader_size": 100,
+      "leader_version": 2000,
+      "followers": [
+        {
+          "id": 1,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 2,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 3,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 4,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 5,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        }
+      ],
+      "all_consistent": true
+    },
+    "timestamp": "2025-12-05T14:00:12.141834+00:00"
+  },
+  {
+    "quorum": 2,
+    "total_writes": 2000,
+    "successful_writes": 2000,
+    "failed_writes": 0,
+    "total_time": 16.65585708618164,
+    "throughput": 120.07787949016921,
+    "avg_latency": 0.08303797745704651,
+    "median_latency": 0.07944786548614502,
+    "min_latency": 0.0415186882019043,
+    "max_latency": 0.23647689819335938,
+    "std_latency": 0.014393968809989622,
+    "p95_latency": 0.1036679744720459,
+    "p99_latency": 0.1360929012298584,
+    "consistency": {
+      "leader_size": 100,
+      "leader_version": 2000,
+      "followers": [
+        {
+          "id": 1,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 2,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 3,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 4,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 5,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        }
+      ],
+      "all_consistent": true
+    },
+    "timestamp": "2025-12-05T14:01:06.378437+00:00"
+  },
+  {
+    "quorum": 3,
+    "total_writes": 2000,
+    "successful_writes": 2000,
+    "failed_writes": 0,
+    "total_time": 18.93195080757141,
+    "throughput": 105.64151683724768,
+    "avg_latency": 0.09443877971172333,
+    "median_latency": 0.08412635326385498,
+    "min_latency": 0.03317403793334961,
+    "max_latency": 0.2822098731994629,
+    "std_latency": 0.02905566706410369,
+    "p95_latency": 0.1561260223388672,
+    "p99_latency": 0.21846389770507812,
+    "consistency": {
+      "leader_size": 100,
+      "leader_version": 2000,
+      "followers": [
+        {
+          "id": 1,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 2,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 3,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 4,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 5,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        }
+      ],
+      "all_consistent": true
+    },
+    "timestamp": "2025-12-05T14:02:02.088311+00:00"
+  },
+  {
+    "quorum": 4,
+    "total_writes": 2000,
+    "successful_writes": 2000,
+    "failed_writes": 0,
+    "total_time": 18.266134023666382,
+    "throughput": 109.49224381079843,
+    "avg_latency": 0.09112122511863709,
+    "median_latency": 0.08475852012634277,
+    "min_latency": 0.041844844818115234,
+    "max_latency": 0.2696828842163086,
+    "std_latency": 0.022538239541640446,
+    "p95_latency": 0.13007283210754395,
+    "p99_latency": 0.20049095153808594,
+    "consistency": {
+      "leader_size": 100,
+      "leader_version": 2000,
+      "followers": [
+        {
+          "id": 1,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 2,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 3,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 4,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 5,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        }
+      ],
+      "all_consistent": true
+    },
+    "timestamp": "2025-12-05T14:02:56.412489+00:00"
+  },
+  {
+    "quorum": 5,
+    "total_writes": 2000,
+    "successful_writes": 2000,
+    "failed_writes": 0,
+    "total_time": 20.385712146759033,
+    "throughput": 98.10792900447996,
+    "avg_latency": 0.10168710577487945,
+    "median_latency": 0.09012496471405029,
+    "min_latency": 0.05128598213195801,
+    "max_latency": 0.6111958026885986,
+    "std_latency": 0.045335960204109994,
+    "p95_latency": 0.16620612144470215,
+    "p99_latency": 0.2685871124267578,
+    "consistency": {
+      "leader_size": 100,
+      "leader_version": 2000,
+      "followers": [
+        {
+          "id": 1,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 2,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 3,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 4,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        },
+        {
+          "id": 5,
+          "size": 100,
+          "version": 20,
+          "consistent": true,
+          "missing_keys": 0,
+          "extra_keys": 0,
+          "mismatches": 0
+        }
+      ],
+      "all_consistent": true
+    },
+    "timestamp": "2025-12-05T14:03:52.475564+00:00"
+  }
+]
